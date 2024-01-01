@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+      <title>Graph Visualization</title>
+      <style>
+         html, body {
+         margin: 0;
+         padding: 0;
+         height: 100%;
+         }
+         .legend {
+         display: flex;
+         flex-wrap: wrap;
+         margin-bottom: 20px;
+         }
+         .legend-item {
+         display: flex;
+         align-items: center;
+         margin-right: 60px;
+         }
+         .legend-item span {
+         display: inline-block;
+         width: 12px;
+         height: 12px;
+         margin-right: 5px;
+         }
+         .grid-container {
+         display: grid;
+         grid-template-columns: 1fr auto;
+         grid-template-rows: auto;
+         grid-gap: 20px;
+         }
+         .grid-item {
+         grid-column: span 1;
+         }
+         .svg-container {
+         height: 100vh;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         overflow: auto
+         }
+         #svg-container {
+         width: 100%;
+         height: 100%;
+         }
+      </style>
+   </head>
+   <body>
+
+      <h1>Graph Visualization</h1>
+      <p>Please choose a file to visualize.</p>
+      <div class="container">
+         <div class="grid-item">
+            <form action="/vis" method="POST" enctype="multipart/form-data">
+               <label for="file">File:</label>
+               <input type="file" id="file" name="file" required><br><br>
+               <input type="submit" value="Upload">
+            </form>
+         </div>
+         <div class="grid-item" style="grid-row: span 2;">
+            <div class="svg-container">
+               <div id="svg-container"></div>
+            </div>
+         </div>
+      </div>
+      <script src="https://d3js.org/d3.v6.min.js"></script>
+      <script>
+         var nodes = {{ nodes | safe }};
+         var edges = {{ edges | safe }};
+         var metadata = {{ metadata | safe }};
+         console.log(edges);
+         console.log(nodes);
+         console.log(metadata);
+
+         var container = document.querySelector(".svg-container");
+         var width = container.offsetWidth;
+         var height = container.offsetHeight;
+
+         var svg = d3.select("#svg-container") // Updated selector to match the ID
+             .append("svg")
+             .attr("width", width)
+             .attr("height", height);
+
+           svg.append("defs")
+             .append("marker")
+             .attr("id", "arrowhead")
+             .attr("viewBox", "0 -5 10 10") // Adjust the viewBox for arrowhead size
+             .attr("refX", 10) // Adjust the refX to position the arrowhead at the end of the line
+             .attr("refY", 0)
+             .attr("markerWidth", 8) // Adjust the markerWidth for arrowhead size
+             .attr("markerHeight", 8)
+             .attr("orient", "auto") // Set the orientation of the arrowhead based on line direction
+             .append("path")
+             .attr("d", "M0,-5L10,0L0,5") // Path commands for the arrowhead shape
+             .style("fill", "#999"); // Set the color of the arrowhead
+
+
+           var simulation = d3.forceSimulation(nodes)
+               .force("link", d3.forceLink(edges).id(d => d.id).distance(200))
+               .force("charge", d3.forceManyBody().strength(-200))
+               .force("center", d3.forceCenter(width / 2, height / 2))
+               .force("x", d3.forceX(width / 2).strength(0.01))
+               .force("y", d3.forceY(height / 2).strength(0.01))
+               .force("collide", d3.forceCollide().radius(90));
+
+           var colorMap = {
+             "Assignment statement": "grey",
+             "Location partially identifiable source": "yellow",
+             "Not a privacy-relevant method": "green",
+             "Nop statement": "green",
+             "Identity statement": "red",
+             "Conditional statement": "pink",
+             "Processing method": "yellow",
+             "Network identifiable source": "red",
+             "Apache network method": "red",
+             "IO method": "brown",
+             "Return statement": "pink"
+           };
+
+           var riskLevelColorMap = {
+           "Risk1": "red",
+           "Risk2": "orange",
+           "Risk3": "yellow",
+           "Risk4": "green"
+           };
+           var riskLevelLegendLabels = ["Risk 1 (System identifiable data sources)",
+                                           "Risk 2 (System access data sources)",
+                                           "Risk 3 (System partially identifiable data sources)",
+                                           "Risk 4 (Context-based sources)"]; // custom legend for nodes
+
+
+           var edgeColorMap = {
+             "0": "Control entry type",
+             "1": "Control type",
+             "2": "Data type",
+             "3": "Parameter in",
+             "4": "Parameter out",
+             "5": "Call type",
+             "6": "Summary type",
+             "7": "Data field type",
+             "8": "Static data field type",
+             "9": "Callback type",
+             "10": "Callback definition type",
+             "11": "Callback alternative type",
+             "12": "Exception type",
+             "13": "Input type"
+           };
+
+           var edge_types = {
+               0: "Control entry type",
+               1: "Control type",
+               2: "Data type",
+               3: "Parameter in",
+               4: "Parameter out",
+               5: "Call type",
+               6: "Summary type",
+               7: "Data field type",
+               8: "Static data field type",
+               9: "Callback type",
+               10: "Callback definition type",
+               11: "Callback alternative type",
+               12: "Exception type",
+               13: "Input type"
+           };
+
+
+           var colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+           var link = svg.selectAll("line")
+             .data(edges)
+             .enter().append("line")
+             .style("stroke", d => {
+             // Check if the source node's privacyRelevance is 'Not a privacy-relevant method'
+             if (d.source.privacyRelevance === 'Not a privacy-relevant method'
+               ) {
+             return 'rgb(144, 238, 144)';  // Return 'green' if the condition is met
+             } else {
+             return colorScale(edgeColorMap[d.edgeType]);  // Otherwise, use the edgeColorMap
+             }
+             })
+             .style("stroke-width", 3)
+             .attr("marker-end", "url(#arrowhead)") // Add the arrowhead marker to the end of the line
+             .attr("x1", d => d.source.x)
+             .attr("y1", d => d.source.y)
+             .attr("x2", d => d.target.x)
+             .attr("y2", d => d.target.y)
+             .on("mouseover", handleMouseOver)
+             .on("mouseout", handleMouseOut);
+
+
+         var nodeGroup = svg.selectAll(".node-group")
+           .data(nodes)
+           .enter().append("g")
+           .attr("class", "node-group");
+
+         var node = nodeGroup.append("rect")
+           .attr("width", 20)
+           .attr("height", 20)
+           .style("fill", d => {
+           //check if its the root node or not
+           if (d.root === 'Yes'){
+               return riskLevelColorMap[d.riskLevel] || "rgb(144, 238, 144)"
+               }
+           else {
+               return riskLevelColorMap[d.RiskLevel] || "rgb(144, 238, 144)"
+               }
+           })
+           .on("mouseover", handleMouseOverNode)
+           .on("mouseout", handleMouseOutNode);
+
+         var nodeLabels = nodeGroup.append("text")
+           .attr("class", "node-label")
+           .text(d => d.id)
+           .style("text-anchor", "middle")
+           .style("alignment-baseline", "middle")
+           .style("pointer-events", "none")
+           .style("font-size","10px");  // make the label non-interactive
+
+         node.attr("width", function(d, i) {
+           return nodeLabels._groups[0][i].getComputedTextLength() + 10;
+         });
+
+         var legend = svg.selectAll('.legend')
+           .data(Object.entries(riskLevelColorMap)) // Convert colorMap to an array of [key, value] pairs
+           .enter().append('g')
+           .attr('class', 'legend')
+           .attr('transform', function(d, i) { return 'translate(0,' + i * 20 + ')'; });
+
+         legend.append('rect')
+           .attr('x', width - 18)
+           .attr('width', 18)
+           .attr('height', 18)
+           .style('fill', d => d[1]); // Use the color from the colorMap
+
+         legend.append('text')
+           .attr('x', width - 24)
+           .attr('y', 9)
+           .attr('dy', '.35em')
+           .style('text-anchor', 'end')
+           .text(function(d, i) { return riskLevelLegendLabels[i]; }); // Using legend labels
+         /*
+         var edgeLegend = svg.selectAll('.edge-legend')
+           .data(Object.entries(edgeColorMap)) // Convert edgeColorMap to an array of [key, value] pairs
+           .enter().append('g')
+           .attr('class', 'legend')
+           .attr('transform', function(d, i) { return 'translate(0,' + (i * 20 + 300) + ')'; }); // Adjust the position
+
+         edgeLegend.append('rect')
+           .attr('x', width - 18)
+           .attr('width', 18)
+           .attr('height', 18)
+           .style('fill', d => colorScale(d[1])); // Use the color from the colorScale
+
+         edgeLegend.append('text')
+           .attr('x', width - 24)
+           .attr('y', 9)
+           .attr('dy', '.35em')
+           .style('text-anchor', 'end')
+           .text(d => d[1]); // Use the category from the edgeColorMap
+         */
+
+
+         simulation.on("tick", () => {
+           link
+               .attr("x1", d => d.source.x)
+               .attr("y1", d => d.source.y)
+               .attr("x2", function(d) {
+                   let dx = d.target.x - d.source.x;
+                   let dy = d.target.y - d.source.y;
+                   let angle = Math.atan2(dy, dx);
+                   let radius = Math.sqrt(dx * dx + dy * dy);
+                   let padding = node._groups[0][d.target.index].getBBox().width / 2;  // Half of the node width, adjust if needed
+                   let paddedX = d.target.x - (padding * Math.cos(angle));
+                   return paddedX;
+               })
+               .attr("y2", function(d) {
+                   let dx = d.target.x - d.source.x;
+                   let dy = d.target.y - d.source.y;
+                   let angle = Math.atan2(dy, dx);
+                   let radius = Math.sqrt(dx * dx + dy * dy);
+                   let padding = node._groups[0][d.target.index].getBBox().height / 2;  // Half of the node height, adjust if needed
+                   let paddedY = d.target.y - (padding * Math.sin(angle));
+                   return paddedY;
+               });
+
+           node
+               .attr("x", d => d.x - node._groups[0][d.index].getBBox().width / 2)
+               .attr("y", d => d.y - node._groups[0][d.index].getBBox().height / 3);
+
+           nodeLabels
+               .attr("x", d => d.x)
+               .attr("y", d => d.y + 5); // Adjusted for better centering
+         });
+
+
+
+           function handleMouseOver(event, d) {
+           d3.select(this).style("stroke-width", 4); // Increase the stroke width
+
+           var tooltip = d3.select("body")
+               .append("div")
+               .attr("class", "tooltip")
+               .style("position", "absolute")
+               .style("background-color", "white")
+               .style("border", "1px solid black")
+               .style("padding", "5px")
+               .style("left", event.pageX + "px")
+               .style("top", event.pageY + "px");
+
+           var edgeTypes = JSON.parse(d.edgeType);
+           var edgeDescriptions = edgeTypes.map(type => edgeColorMap[type.toString()]).join(', ');
+
+           tooltip.append("div")
+               .text("Edge Type: " + edgeDescriptions);
+         }
+
+
+           function handleMouseOut(event, d) {
+             d3.select(this).style("stroke-width", 2); // Restore the stroke width
+
+             d3.select(".tooltip").remove();
+           }
+
+           function handleMouseOverNode(event, d) {
+             d3.select(this).attr("r", 8); // Increase the circle size
+             d3.select(this).attr("stroke", "black"); // Add a black stroke
+
+             var tooltip = d3.select("body")
+               .append("div")
+               .attr("class", "tooltip")
+               .style("position", "absolute")
+               .style("background-color", "white")
+               .style("border", "1px solid black")
+               .style("padding", "5px")
+               .style("left", event.pageX + "px")
+               .style("top", event.pageY + "px");
+
+             tooltip.append("div")
+               .text("Privacy Relevance : " + d.privacyRelevance);
+
+             tooltip.append("div")
+               .text("Method name : " + d.riskInfo);
+
+             tooltip.append("div")
+               .text("Root Node : " + d.root);
+
+             tooltip.append("div")
+               .text(d.descriptionRiskNode);
+           }
+
+           function handleMouseOutNode(event, d) {
+             d3.select(this).attr("r", 5); // Restore the circle size
+             d3.select(this).attr("stroke", "none"); // Remove the stroke
+
+             d3.select(".tooltip").remove();
+           }
+
+
+      </script>
+   </body>
+</html>

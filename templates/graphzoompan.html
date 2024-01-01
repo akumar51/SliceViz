@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="utf-8">
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css">
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+      <title>Graph Visualization</title>
+      <style>
+         html, body {
+         margin: 0;
+         padding: 0;
+         height: 100%;
+         }
+         .legend {
+         display: flex;
+         flex-wrap: wrap;
+         margin-bottom: 20px;
+         }
+         .legend-item {
+         display: flex;
+         align-items: center;
+         margin-right: 60px;
+         }
+         .legend-item span {
+         display: inline-block;
+         width: 12px;
+         height: 12px;
+         margin-right: 5px;
+         }
+         .grid-container {
+         display: grid;
+         grid-template-columns: 1fr auto;
+         grid-template-rows: auto;
+         grid-gap: 20px;
+         }
+         .grid-item {
+         grid-column: span 1;
+         }
+         .svg-container {
+         height: 100vh;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         overflow: hidden
+         }
+         #svg-container {
+         width: 100%;
+         height: 100%;
+         }
+         .control-buttons button {
+         margin-right: 5px;
+         margin-bottom: 5px;
+         }
+         .control-buttons {
+         display: flex;
+         flex-direction: row;
+         }
+         .custom-btn-graphcontrol {
+         padding: 3px 5px;
+         font-size: 0.7rem;
+         width: 30px; /* Adjust based on the icon's width */
+         height: 30px; /* Adjust based on the icon's height */
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         }
+         .custom-btn i {
+         font-size: 1rem;
+         }
+         .legend-color {
+         display: inline-block;
+         width: 10px;    /* reduced from 12px */
+         height: 10px;   /* reduced from 12px */
+         margin-right: 8px;   /* reduced from 10px */
+         vertical-align: middle;
+         }
+         .card .list-group-item {
+         font-size: 0.8rem;  /* adjust as needed */
+         padding: 5px 12px;  /* reduced padding */
+         }
+         #node-select {
+         width: 250px;  /* or whatever fixed width you want */
+         overflow: hidden;
+         }
+         .custom-file-input-sm {
+         font-size: 0.875rem; /* Adjust this value to your preference */
+         padding: 0.25rem 0.5rem; /* Adjust these values for padding */
+         }
+
+      </style>
+   </head>
+   <body>
+      <nav class="navbar navbar-expand-sm bg-dark navbar-dark fixed-top">
+        <div class="container-fluid">
+            <!-- Logo and links -->
+            <a class="navbar-brand" href="/">SliceViz</a>
+            <div class="navbar-collapse collapse">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/vis">Tool</a>
+                    </li>
+
+                    <!-- Dropdown for documentation -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbardoc" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Documentation
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbardoc">
+                            <a class="dropdown-item" href="/docs">Privacy-Relevant Classification </a>
+                            <a class="dropdown-item" href="/pribasedoc">PriBaSE</a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+      <div class="container-fluid">
+         <div class="grid-item">
+            <div class="row">
+               <!--  <div class="col">
+                  <form action="/vis" method="POST" enctype="multipart/form-data">
+                     <label for="file">Upload a file:</label>
+                     <input type="file" id="file" name="file" required><br><br>
+                     <input type="submit" value="Upload">
+                  </form>
+                  </div>
+                  <div class="col">
+                  <a id="json-link" href="#" target="_blank">Click to view input data</a>
+                  </div>
+                  <div class="col">
+                  <label for="node-select">Select:</label>
+                  <select id="node-select">
+                     <option selected="true" disabled="disabled">Select a node from the list to highlight it</option>
+                  </select>
+                  </div> -->
+            </div>
+         </div>
+         <div class="grid-item" >
+            <div class="row">
+               <div class="col-2">
+                  <div class="logo">Jicer<span>-Pro</span></div>
+                  <br><br>
+                  <form action="/vis" method="POST" enctype="multipart/form-data">
+                     <div class="form-group">
+                        <label for="file">Upload a file:</label>
+                        <input type="file" class="form-control-file custom-file-input-sm" id="file" name="file" required>
+                     </div>
+                     <div class="form-group">
+                        <input type="submit" class="btn btn-primary btn-sm" value="Upload">
+                     </div>
+                  </form>
+                  <div class="col">
+                     <a id="json-link" href="#" target="_blank">View raw data</a>
+                  </div>
+                  <br>
+                  <!-- <label for="node-select">Select:</label> -->
+                  <select id="node-select">
+                     <option selected="true" disabled="disabled">Select to highlight a node</option>
+                  </select>
+                  <br>
+                  <input type="checkbox" id="highlight-risk"> Data source nodes<br>
+                  <input type="checkbox" id="highlight-assignment"> Assignment statement<br>
+                  <input type="checkbox" id="highlight-identity"> Identity statement<br>
+                  <input type="checkbox" id="highlight-conditional"> Conditional statement<br>
+                  <input type="checkbox" id="highlight-non-privacy"> Non privacy-relevant method<br>
+                  <br>
+                  <div class="control-buttons mt-3">
+                     <button class="btn btn-primary custom-btn-graphcontrol" id="zoomIn"><i class="fas fa-search-plus"></i></button>
+                     <button class="btn btn-primary custom-btn-graphcontrol" id="zoomOut"><i class="fas fa-search-minus"></i></button>
+                     <button class="btn btn-secondary custom-btn-graphcontrol" id="panLeft"><i class="fas fa-arrow-left"></i></button>
+                     <button class="btn btn-secondary custom-btn-graphcontrol" id="panRight"><i class="fas fa-arrow-right"></i></button>
+                     <button class="btn btn-secondary custom-btn-graphcontrol" id="panUp"><i class="fas fa-arrow-up"></i></button>
+                     <button class="btn btn-secondary custom-btn-graphcontrol" id="panDown"><i class="fas fa-arrow-down"></i></button>
+                     <!--  <button class="btn btn-success custom-btn-graphcontrol" id="rotate"><i class="fas fa-redo"></i></button> -->
+                  </div>
+                  <br>
+                  <div class="card mt-3" style="width: 250px;">
+                     <div class="card-header-nodes-legends" style="font-size: 18px;">
+                        Nodes Legend
+                     </div>
+                     <ul class="list-group list-group-flush">
+                        <li class="list-group-item" data-toggle="tooltip-legend" data-placement="top"
+                            title="Background collection of identifiable data(e.g., IP, SSN, IBAN).
+                            Labels: device, location, network, account">
+                            <span class="legend-color" style="background-color: #FF2424;"></span>Risk 1 Identifiable data sources</li>
+
+                        <li class="list-group-item" data-toggle="tooltip-legend" data-placement="top"
+                            title="Collects data with partial identifiers (e.g., pincode, family name). Labels: device, location, network, account.">
+                           <span class="legend-color" style="background-color: #E0725B ;"></span> Risk 2 Partially identifiable data sources</li>
+
+                        <li class="list-group-item" data-toggle="tooltip-legend" data-placement="top"
+                            title="Captures access data (e.g., username, password) without direct identification">
+                           <span class="legend-color" style="background-color: #6DE9E2;"></span> Risk 3 Access data sources</li>
+
+                        <li class="list-group-item" data-toggle="tooltip-legend" data-placement="top"
+                            title="Methods needing context to categorize (e.g., read, recordAudio).">
+                           <span class="legend-color" style="background-color: #04A902;"></span> Risk 4 Context-based sources</li>
+                        <li class="list-group-item" data-toggle="tooltip-legend" data-placement="top"
+                            title="Not a privacy-relevant method">
+                           <span class="legend-color" style="background-color: lightgray;"></span> Non privacy-relevant nodes</li>
+                     </ul>
+                     <div class="card-header-nodes-legends" style="font-size: 18px;">
+                        Edges Legend
+                     </div>
+                     <ul class="list-group list-group-flush">
+                        <li class="list-group-item" data-toggle="tooltip-legend" data-placement="top" title="Control type, Control entry type, and Exception type"><span class="legend-color" style="background-color: green;"></span> Control type</li>
+                        <li class="list-group-item" data-toggle="tooltip-legend" data-placement="top" title="Data type, Data field type, and Static data field type"><span class="legend-color" style="background-color: blue;"></span> Data type </li>
+                        <li class="list-group-item" data-toggle="tooltip-legend" data-placement="top" title="Parameter in, Parameter out, Call type, and Summary type"><span class="legend-color" style="background-color: pink;"></span> Parameter, call and summary type</li>
+                        <li class="list-group-item" data-toggle="tooltip-legend" data-placement="top" title="Callback type, callback definition type, and callback alternative type"><span class="legend-color" style="background-color: grey;"></span> Callback type</li>
+                        <li class="list-group-item" data-toggle="tooltip-legend" data-placement="top" title="Input Type"><span class="legend-color" style="background-color: black;"></span> Input type</li>
+                     </ul>
+                  </div>
+               </div>
+               <div class="col-10">
+                  <div class="svg-container">
+                     <div id="svg-container"></div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <script src="https://d3js.org/d3.v6.min.js"></script>
+      <script>
+         var nodes = {{ nodes | safe }};
+         var edges = {{ edges | safe }};
+         var metadata = {{ metadata | safe }};
+         console.log(nodes);
+         console.log(edges);
+         console.log(metadata);
+
+         var input_json_data = {{ input_data_json | safe }};
+
+         // Setting the href for the JSON data link
+         var dataUri = "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(input_json_data, null, 2));
+         document.getElementById('json-link').setAttribute('href', dataUri);
+
+         // Get a reference to the dropdown
+         var nodeSelect = document.getElementById('node-select');
+
+         // Add an option for each node
+         nodes.forEach(node => {
+         var option = document.createElement('option');
+         option.value = node.id;
+         option.text = node.id;
+         nodeSelect.appendChild(option);
+         });
+
+         $(document).ready(function(){
+         $('[data-toggle="tooltip-legend"]').tooltip();
+         $('[data-toggle="tooltip-legend"]').tooltip();
+         });
+
+         var container = document.querySelector(".svg-container");
+         var width = container.offsetWidth;
+         var height = container.offsetHeight;
+
+         var svg = d3.select("#svg-container")
+             .append("svg")
+             .attr("width", width)
+             .attr("height", height);
+
+         var g = svg.append("g");
+
+           svg.append("defs")
+             .append("marker")
+             .attr("id", "arrowhead")
+             .attr("viewBox", "0 -5 10 10") // Adjust the viewBox for arrowhead size
+             .attr("refX", 10) // Adjust the refX to position the arrowhead at the end of the line
+             .attr("refY", 0)
+             .attr("markerWidth", 8) // Adjust the markerWidth for arrowhead size
+             .attr("markerHeight", 8)
+             .attr("orient", "auto") // Set the orientation of the arrowhead based on line direction
+             .append("path")
+             .attr("d", "M0,-5L10,0L0,5") // Path commands for the arrowhead shape
+             .style("fill", "#999"); // Set the color of the arrowhead
+         var zoom = d3.zoom()
+           .on("zoom", function(event){
+                g.attr("transform", event.transform);
+           });
+         // applies the zoom event on svg
+         svg.call(zoom);
+         //let currentRotation = 0;
+
+         document.getElementById("zoomIn").addEventListener("click", function() {
+         zoom.scaleBy(svg.transition().duration(750), 1.5);
+         });
+
+         document.getElementById("zoomOut").addEventListener("click", function() {
+         zoom.scaleBy(svg.transition().duration(750), 0.5);
+         });
+
+         document.getElementById("panLeft").addEventListener("click", function() {
+         zoom.translateBy(svg.transition().duration(750), 80, 0);
+         });
+
+         document.getElementById("panRight").addEventListener("click", function() {
+         zoom.translateBy(svg.transition().duration(750), -80, 0);
+         });
+
+         document.getElementById("panUp").addEventListener("click", function() {
+         zoom.translateBy(svg.transition().duration(750), 0, 80);
+         });
+
+         document.getElementById("panDown").addEventListener("click", function() {
+         zoom.translateBy(svg.transition().duration(750), 0, -80);
+         });
+
+         var simulation = d3.forceSimulation(nodes)
+               .force("link", d3.forceLink(edges).id(d => d.id).distance(11))
+               .force("charge", d3.forceManyBody().strength(-60))
+               .force("center", d3.forceCenter(width / 2, height / 2))
+               .force("x", d3.forceX(width / 2).strength(0.01))
+               .force("y", d3.forceY(height / 2).strength(0.01))
+               .force("collide", d3.forceCollide().radius(120));
+
+           var colorMap = {
+             "Assignment statement": "grey",
+             "Location partially identifiable source": "yellow",
+             "Not a privacy-relevant method": "green",
+             "Nop statement": "green",
+             "Identity statement": "red",
+             "Conditional statement": "pink",
+             "Processing method": "yellow",
+             "Network identifiable source": "red",
+             "Apache network method": "red",
+             "IO method": "brown",
+             "Return statement": "pink"
+           };
+
+
+
+           var riskLevelColorMap = {
+           "Risk1": "FF2424",
+           "Risk2": "E0725B",
+           "Risk3": "6DE9E2",
+           "Risk4": "04A902",
+           "Not a privacy-relevant method": "lightgray"
+           };
+
+
+            var edgeColorMap = {
+             "[0]" : "green",
+             "[1]": "green",
+             "[2]": "blue",
+             "[3]": "pink",
+             "[4]": "pink",
+             "[5]": "pink",
+             "[6]": "pink",
+             "[7]": "blue",
+             "[8]": "blue",
+             "[9]": "grey",
+             "[10]": "grey",
+             "[11]": "grey",
+             "[12]": "green",
+             "[13]": "black",
+             "[0, 1]": "black",
+             "[1, 2]": "black",
+            "[2, 3]": "pink",
+            "[8] Field edge label: <de.ecspride.ActivityLifecycle1: java.lang.String URL>": "pink",
+            "[7] Field edge label: <com.beita.contact.ContactEditor: android.widget.EditText mobileText>": "pink"
+           };
+/*
+         var edgeColorMap = {
+             "[0]" : "Control entry type",
+             "[1]": "Control type",
+             "[2]": "Data type",
+             "[3]": "Parameter in",
+             "[4]": "Parameter out",
+             "[5]": "Call type",
+             "[6]": "Summary type",
+             "[7]": "Data field type",
+             "[8]": "Static data field type",
+             "[9]": "Callback type",
+             "[10]": "Callback definition type",
+             "[11]": "Callback alternative type",
+             "[12]": "Exception type",
+             "[13]": "Input type",
+             "[0, 1]": "Control and Control",
+             "[1, 2]": "Control and Data",
+            "[2, 3]": "Data field and Parameter",
+           };
+
+
+
+         "edge_types": {
+        0: "Control entry type",
+        1: "Control type",
+        2: "Data type",
+        3: "Parameter in",
+        4: "Parameter out",
+        5: "Call type",
+        6: "Summary type",
+        7: "Data field type",
+        8: "Static data field type",
+        9: "Callback type",
+        10: "Callback definition type",
+        11: "Callback alternative type",
+        12: "Exception type",
+        13: "Input type",
+    }
+         var edgeColorMapForLegend = {
+             "0" : "Control/Control Entry",
+             "2": "Data",
+             "3": "Parameter In/Out",
+             "5": "Call/Callback",
+             "6": "Summary",
+             "12": "Exception",
+             "13": "Input"
+           };
+*/
+
+           var edgeCategories = [...new Set(Object.values(edgeColorMap))];
+
+           var colorScale = d3.scaleOrdinal()
+                .domain(edgeCategories)
+                .range(d3.schemeCategory10);
+
+           console.log(edges.map(d => d.edgeType));
+           console.log(edges.map(d => edgeColorMap[d.edgeType]));
+           console.log(edges.map(d => colorScale(edgeColorMap[d.edgeType])));
+
+           var link = g.selectAll("line")
+             .data(edges)
+             .enter().append("line")
+             //.style("stroke", d => colorScale(edgeColorMap[d.edgeType]))
+             .style("stroke", d => edgeColorMap[d.edgeType])
+             .style("stroke-width", 2)
+             .attr("marker-end", "url(#arrowhead)") // Add the arrowhead marker to the end of the line
+             .attr("x1", d => d.source.x)
+             .attr("y1", d => d.source.y)
+             .attr("x2", d => d.target.x)
+             .attr("y2", d => d.target.y)
+             .on("mouseout", handleMouseOut)
+             .on("mouseover", handleMouseOver);
+
+
+         var nodeGroup = g.selectAll(".node-group")
+           .data(nodes)
+           .enter().append("g")
+           .attr("class", "node-group");
+
+         var node = nodeGroup.append("rect")
+           .attr("width", 20)
+           .attr("height", 20)
+           .style("fill", d => {
+           //check if its the root node or not
+           if (d.root === 'Yes'){
+               return riskLevelColorMap[d.RiskLevel] || "rgb(255, 15, 0)"
+               }
+           else {
+               return riskLevelColorMap[d.RiskLevel] || "lightgray"
+               }
+           });
+
+         var nodeLabels = nodeGroup.append("text")
+           .attr("class", "node-label")
+           .text(d => d.id)
+           .style("text-anchor", "middle")
+           .style("alignment-baseline", "middle")
+           .style("pointer-events", "none")
+           .style("font-size","10px");  // make the label non-interactive
+
+         node.attr("width", function(d, i) {
+           return nodeLabels._groups[0][i].getComputedTextLength() + 10;
+         });
+
+         simulation.on("tick", () => {
+           link
+               .attr("x1", d => d.source.x)
+               .attr("y1", d => d.source.y)
+               .attr("x2", function(d) {
+                   let dx = d.target.x - d.source.x;
+                   let dy = d.target.y - d.source.y;
+                   let angle = Math.atan2(dy, dx);
+                   let radius = Math.sqrt(dx * dx + dy * dy);
+                   let padding = node._groups[0][d.target.index].getBBox().width / 2;  // Half of the node width, adjust if needed
+                   let paddedX = d.target.x - (padding * Math.cos(angle));
+                   return paddedX;
+               })
+               .attr("y2", function(d) {
+                   let dx = d.target.x - d.source.x;
+                   let dy = d.target.y - d.source.y;
+                   let angle = Math.atan2(dy, dx);
+                   let radius = Math.sqrt(dx * dx + dy * dy);
+                   let padding = node._groups[0][d.target.index].getBBox().height / 2;  // Half of the node height, adjust if needed
+                   let paddedY = d.target.y - (padding * Math.sin(angle));
+                   return paddedY;
+               });
+
+           node
+               .attr("x", d => d.x - node._groups[0][d.index].getBBox().width / 2)
+               .attr("y", d => d.y - node._groups[0][d.index].getBBox().height / 3);
+
+         node.attr("data-toggle", "tooltip")
+         .attr("data-original-title", d => {
+        // let tooltipContent = "<b>Privacy Relevance:</b> " + d.privacyRelevance;
+         let tooltipContent = d.privacyRelevance;
+         if (d.descriptionRiskNode !== 'Not a privacy-relevant method') {
+         tooltipContent += "<br><b>Identifier: </b>" +d.descriptionRiskNode;
+         }
+        /* if (d.root === "Yes") {
+            tooltipContent += "<br><b>Root Node</b>";
+         }
+*/
+         if (d.documentation_url != "Documentation is not available") {
+            if (d.documentation_url != "Not available") {
+            tooltipContent += '<br><a href="' + d.documentation_url + '" target="_blank">Check documentation</a>';
+         }
+         }
+         return tooltipContent;
+         });
+
+           nodeLabels
+               .attr("x", d => d.x)
+               .attr("y", d => d.y + 5); // Adjusted for better centering
+         });
+
+         $(function () {
+         $('[data-toggle="tooltip"]').tooltip({
+         html: true, // To allow HTML content inside tooltips
+         trigger: 'click' // Set the trigger to 'click'
+         });
+         });
+         $(document).on('click', function(event) {
+         if (!$(event.target).closest('.node-group').length) {
+         // Hide all tooltips if clicked outside of a node
+         $('[data-toggle="tooltip"]').tooltip('hide');
+         }
+         });
+
+
+
+
+         function handleMouseOver(event, d) {
+           d3.select(this).style("stroke-width", 3); // Increase the stroke width
+           var tooltip = d3.select("body")
+               .append("div")
+               .attr("class", "tooltip")
+               .style("position", "absolute")
+               .style("background-color", "white")
+               .style("border", "1px solid black")
+               .style("padding", "5px")
+               .style("left", event.pageX + "px")
+               .style("top", event.pageY + "px");
+           var edgeTypes = JSON.parse(d.edgeType);
+           var edgeDescriptions = edgeTypes.map(type => edgeColorMap[type.toString()]).join(', ');
+           tooltip.append("div")
+               .text(edgeDescriptions);
+         }
+           function handleMouseOut(event, d) {
+             d3.select(this).style("stroke-width", 2); // Restore the stroke width
+             d3.select(".tooltip").remove();
+           }
+
+        nodeSelect.addEventListener('change', function() {
+          // Get the ID of the selected node
+          var selectedId = this.value;
+
+          // Check the state of both checkboxes
+          var highlightAssignmentChecked = document.getElementById('highlight-assignment').checked;
+          var highlightNonPrivacyChecked = document.getElementById('highlight-non-privacy').checked;
+          var highlightRiskChecked = document.getElementById('highlight-risk').checked;
+          var highlightIdentityChecked = document.getElementById('highlight-identity').checked;
+          var highlightConditionalChecked = document.getElementById('highlight-conditional').checked;
+
+          // Remove any existing highlights
+          d3.selectAll('rect')
+          .attr('stroke', null)
+          .attr('stroke-width', null);
+
+          // If 'Assignment statement' checkbox is checked, highlight all nodes of that type
+          if (highlightAssignmentChecked) {
+              d3.selectAll('rect')
+              .filter(d => d.privacyRelevance === 'Assignment statement')
+              .attr('stroke', 'black')
+              .attr('stroke-width', 4);
+          }
+
+          // If 'Not a privacy-relevant method' checkbox is checked, highlight all nodes of that type
+          if (highlightNonPrivacyChecked) {
+              d3.selectAll('rect')
+              .filter(d => d.privacyRelevance === 'Not a privacy-relevant method')
+              .attr('stroke', 'black')
+              .attr('stroke-width', 4);
+          }
+
+          // If 'Risk' checkbox is checked, highlight all nodes of that type
+          if (highlightRiskChecked) {
+              d3.selectAll('rect')
+              .filter(d => d.RiskLevel === 'Risk1' || d.RiskLevel === 'Risk2' || d.RiskLevel === 'Risk3' || d.RiskLevel === 'Risk4')
+              .attr('stroke', 'black')
+              .attr('stroke-width', 4);
+          }
+          // If 'Identity statement' checkbox is checked, highlight all nodes of that type
+          if (highlightIdentityChecked) {
+              d3.selectAll('rect')
+              .filter(d => d.privacyRelevance === 'Identity statement')
+              .attr('stroke', 'black')
+              .attr('stroke-width', 4);
+          }
+          // If 'Conditional statement' checkbox is checked, highlight all nodes of that type
+          if (highlightConditionalChecked) {
+              d3.selectAll('rect')
+              .filter(d => d.privacyRelevance === 'Conditional statement')
+              .attr('stroke', 'black')
+              .attr('stroke-width', 4);
+          }
+
+          // If 'Risk' checkbox is checked, highlight all nodes of that type
+          if (highlightRiskChecked) {
+              d3.selectAll('rect')
+              .filter(d => d.RiskLevel === 'Risk1' || d.RiskLevel === 'Risk2' || d.RiskLevel === 'Risk3' || d.RiskLevel === 'Risk4')
+              .attr('stroke', 'black')
+              .attr('stroke-width', 2);
+          }
+
+          // If neither checkbox is checked, highlight only the node with the selected ID
+          if (!highlightAssignmentChecked && !highlightNonPrivacyChecked) {
+              d3.selectAll('rect')
+              .filter(d => d.id === selectedId)
+              .attr('stroke', 'black')
+              .attr('stroke-width', 4);
+          }
+      });
+
+document.getElementById('highlight-assignment').addEventListener('change', function() {
+    // Trigger change event on the dropdown to update highlighting
+    nodeSelect.dispatchEvent(new Event('change'));
+});
+
+document.getElementById('highlight-non-privacy').addEventListener('change', function() {
+    // Trigger change event on the dropdown to update highlighting
+    nodeSelect.dispatchEvent(new Event('change'));
+});
+
+document.getElementById('highlight-risk').addEventListener('change', function() {
+    // Trigger change event on the dropdown to update highlighting
+    nodeSelect.dispatchEvent(new Event('change'));
+});
+
+document.getElementById('highlight-identity').addEventListener('change', function() {
+    // Trigger change event on the dropdown to update highlighting
+    nodeSelect.dispatchEvent(new Event('change'));
+});
+
+document.getElementById('highlight-conditional').addEventListener('change', function() {
+    // Trigger change event on the dropdown to update highlighting
+    nodeSelect.dispatchEvent(new Event('change'));
+});
+
+
+      </script>
+   </body>
+</html>

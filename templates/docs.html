@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+    <title>{% block title %} {% endblock%}</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/stylesheet.css') }}">
+    <style>
+        .container {
+            width: 80%;
+            margin: auto;
+            text-align: left;
+        }
+        .description {
+            margin-bottom: 50px;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-sm bg-dark navbar-dark fixed-top">
+        <div class="container-fluid">
+            <!-- Logo and links -->
+            <a class="navbar-brand" href="/">SliceViz</a>
+            <div class="navbar-collapse collapse">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/vis">Tool</a>
+                    </li>
+
+                    <!-- Dropdown for documentation -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbardoc" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Documentation
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbardoc">
+                            <a class="dropdown-item" href="/docs">Privacy-Relevant Classification </a>
+                            <a class="dropdown-item" href="/pribasedoc">PriBaSE</a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+<div>
+    {% block body %}
+
+    {% endblock %}
+</div>
+<div class="container">
+     <br><br>
+    <div class="container mt-4">
+        <h1>Privacy-Relevant Classification of Data Collected by Android Apps</h1>
+
+        <!-- Step 1: Risk Rating -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2>Step 1: Risk Rating</h2>
+                <h3>First and foremost, we assign a risk ranking to collected data.</h3>
+            </div>
+            <div class="card-body">
+                <p class="font-weight-bold"><b>Directly Identifiable Personal Data (Risk 1): </b>This refers to personal data that can uniquely identify an individual or a device without the use of any additional information. Such data consists of a single piece of information that is sufficient for identification, and hence it is crucial to pseudonymize it before processing. Examples include an email address, a passport num-
+ber, a phone number, IP address.</p>
+
+                <p class="font-weight-bold"><b>Partially Identifiable Personal Data (Risk 2):</b>This type of personal data can identify an individual or a device when combined with additional information. Hence, this data should be pseudonymized before processing. Examples of such data include a pin code, postal address, age, and gender. </p>
+
+                <p class="font-weight-bold"><b>Access Data (Risk 3):</b>This category includes data that can grant access to an individual but cannot identify an individual or a device. For example, a password, a card verification value (CVV), and a one-time password (OTP). While it is not categorized as personal data, it still needs protection since it can cause harm if leaked.</p>
+
+                <p class="font-weight-bold"><b>Context-dependent Data (Risk 4):</b>This type of data may identify an individual or a device depending on its content and the context in which it is used. Protection is necessary, but its exact identifiability cannot be determined statically. For example, the content of an email or a message may contain privacy-related information that is challenging to identify without running the application. </p>
+            </div>
+        </div>
+
+        <!-- Step 2: Privacy Label -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2>Step 2: Privacy Label</h2>
+            </div>
+            <div class="card-body">
+                <!-- Content for Privacy Label... -->
+                We then divide every risk category into further subcategories. A privacy label answers the following two questions: <br>
+	• How risky is this data?<br>
+	• To what extent can it identify a person and/or a device?
+
+            </div>
+        </div>
+
+        <!-- Step 3: Identifier -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2>Step 3: Identifier</h2>
+            </div>
+            <div class="card-body">
+                As a final step, we classify labeled data into some known data identifiers.
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+</div>
+</body>
+</html>
